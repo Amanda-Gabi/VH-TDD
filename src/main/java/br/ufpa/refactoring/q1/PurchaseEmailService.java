@@ -7,42 +7,73 @@ public class PurchaseEmailService {
 
     public String buildEmail(Purchase purchase) {
         StringBuilder sb = new StringBuilder();
-
-        sb.append("Olá, ").append(purchase.customerName()).append("!\n\n");
-        sb.append("Seu pedido #").append(purchase.id()).append(" foi confirmado em ")
-          .append(LocalDate.now()).append(".\n\n");
-
-        sb.append("Itens:\n");
-        double subtotal = 0.0;
-        for (PurchaseItem it : purchase.items()) {
-            double line = it.unitPrice() * it.quantity();
-            subtotal += line;
-            sb.append("- ").append(it.name())
-              .append(" (").append(it.quantity()).append("x) : R$ ")
-              .append(String.format("%.2f", line)).append("\n");
-        }
-
-        double shipping = purchase.isExpress() ? 29.90 : 14.90;
-        double discount = 0.0;
-        if (subtotal >= 300.0) discount = subtotal * 0.10;
-        if (purchase.coupon() != null && purchase.coupon().startsWith("VIP"))
-            discount += 20.0;
-
-        double total = subtotal + shipping - discount;
-
-        sb.append("\nSubtotal: R$ ").append(String.format("%.2f", subtotal)).append("\n");
-        sb.append("Frete: R$ ").append(String.format("%.2f", shipping)).append("\n");
-        sb.append("Descontos: R$ ").append(String.format("%.2f", discount)).append("\n");
-        sb.append("TOTAL: R$ ").append(String.format("%.2f", total)).append("\n\n");
-
-        sb.append("Endereço de entrega:\n");
-        sb.append(purchase.address().street()).append(", ")
-          .append(purchase.address().number()).append("\n");
-        sb.append(purchase.address().city()).append(" - ")
-          .append(purchase.address().zip()).append("\n\n");
-
+        appendGreeting(sb, purchase);
+        appendItems(sb, purchase);
+        appendTotals(sb, purchase);
+        appendAddress(sb, purchase);
         sb.append("Obrigado por comprar com a gente!\n");
         return sb.toString();
+    }
+
+    private void appendGreeting(StringBuilder sb, Purchase p) {
+        sb.append("Olá, ").append(p.customerName()).append("!\n\n");
+        sb.append("Seu pedido #").append(p.id()).append(" foi confirmado em ")
+          .append(LocalDate.now()).append(".\n\n");
+    }
+
+    private void appendItems(StringBuilder sb, Purchase p) {
+        sb.append("Itens:\n");
+        for (PurchaseItem it : p.items()) {
+            double line = lineTotal(it);
+            sb.append("- ").append(it.name())
+              .append(" (").append(it.quantity()).append("x) : R$ ")
+              .append(formatMoney(line)).append("\n");
+        }
+    }
+
+    private void appendTotals(StringBuilder sb, Purchase p) {
+        double subtotal = subtotal(p);
+        double shipping = shipping(p);
+        double discount = discount(p, subtotal);
+        double total = subtotal + shipping - discount;
+
+        sb.append("\nSubtotal: R$ ").append(formatMoney(subtotal)).append("\n");
+        sb.append("Frete: R$ ").append(formatMoney(shipping)).append("\n");
+        sb.append("Descontos: R$ ").append(formatMoney(discount)).append("\n");
+        sb.append("TOTAL: R$ ").append(formatMoney(total)).append("\n\n");
+    }
+
+    private void appendAddress(StringBuilder sb, Purchase p) {
+        sb.append("Endereço de entrega:\n");
+        sb.append(p.address().street()).append(", ")
+          .append(p.address().number()).append("\n");
+        sb.append(p.address().city()).append(" - ")
+          .append(p.address().zip()).append("\n\n");
+    }
+
+    private double lineTotal(PurchaseItem it) {
+        return it.unitPrice() * it.quantity();
+    }
+
+    private double subtotal(Purchase p) {
+        double s = 0.0;
+        for (PurchaseItem it : p.items()) s += lineTotal(it);
+        return s;
+    }
+
+    private double shipping(Purchase p) {
+        return p.isExpress() ? 29.90 : 14.90;
+    }
+
+    private double discount(Purchase p, double subtotal) {
+        double d = 0.0;
+        if (subtotal >= 300.0) d = subtotal * 0.10;
+        if (p.coupon() != null && p.coupon().startsWith("VIP")) d += 20.0;
+        return d;
+    }
+
+    private String formatMoney(double v) {
+        return String.format("%.2f", v);
     }
 
     public record Purchase(String id, String customerName, List<PurchaseItem> items,
