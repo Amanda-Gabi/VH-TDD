@@ -9,7 +9,7 @@ public class SupportChat {
         return "Olá, " + user.name() + "! Como posso ajudar?";
     }
 
-    public record User(String name, boolean banned) {
-        public boolean isBanned() { return banned; }
+    public record User(String name, boolean banned) implements ChatUser {
+        @Override public boolean isBanned() { return banned; }
     }
 }
