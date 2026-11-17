@@ -1,9 +1,11 @@
 package br.ufpa.refactoring.q4;
 
 import java.util.ArrayList;
+import java.util.List;
 
-public class RecentFiles extends ArrayList<String> {
+public class RecentFiles {
 
+    private final List<String> files = new ArrayList<>();
     private final int limit;
 
     public RecentFiles(int limit) {
@@ -11,8 +13,18 @@ public class RecentFiles extends ArrayList<String> {
     }
 
     public void addFile(String path) {
-        remove(path);
-        add(0, path);
-        while (size() > limit) remove(size() - 1);
+        files.remove(path);
+        files.add(0, path);
+        while (files.size() > limit) {
+            files.remove(files.size() - 1);
+        }
+    }
+
+    public int size() {
+        return files.size();
+    }
+
+    public String get(int index) {
+        return files.get(index);
     }
 }
